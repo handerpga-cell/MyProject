@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>✨ Surprise Prank ✨ | For You</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* sedikit efek prank, gak gampang di-copy text */
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #ffdde1 0%, #f9c9e2 100%);
+            font-family: 'Poppins', 'Segoe UI', 'Quicksand', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="27" viewBox="0 0 24 27"><polygon points="2,2 22,13 12,16 2,25" fill="%23ff69b4" stroke="%23fff" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="white"/></svg>') 12 5, auto;
+        }
+
+        /* wadah utama kartu prank */
+        .prank-card {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(255, 250, 245, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 72px 48px 72px 48px;
+            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.2), 0 0 0 12px #ffe4f0, 0 0 0 15px #ffb7d2;
+            padding: 30px 25px 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            border: 2px solid #ff9fcd;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #d63384, #f05b9e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 15px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: inline-block;
+            border-bottom: 4px dotted #ffb3d9;
+            padding-bottom: 8px;
+        }
+
+        .heart-emoji {
+            font-size: 3rem;
+            animation: float 2s infinite ease;
+            display: inline-block;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .message-box {
+            background: #fff0f5;
+            padding: 22px 20px;
+            border-radius: 48px;
+            margin: 20px 0;
+            box-shadow: inset 0 1px 5px #ffc0e0, 0 10px 20px rgba(255, 105, 180, 0.15);
+            font-size: 1.2rem;
+            color: #a13e6b;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .fake-button {
+            background: linear-gradient(95deg, #ff8dc7, #ff6eb4);
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            margin: 10px 0;
+            width: 80%;
+            transition: 0.2s;
+            box-shadow: 0 8px 0 #b24374;
+            font-family: inherit;
+            letter-spacing: 1px;
+        }
+
+        .fake-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #b24374;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0 10px;
+        }
+
+        .prank-btn {
+            background: #ffe2ef;
+            border: 2px solid #ff90c0;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #c14e7a;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: monospace;
+        }
+
+        .prank-btn:hover {
+            background: #ffbde0;
+            transform: scale(0.97);
+            color: white;
+        }
+
+        .secret-area {
+            margin-top: 30px;
+            background: #ffecf0;
+            border-radius: 50px;
+            padding: 12px;
+            font-size: 0.9rem;
+            color: #bc6f8f;
+            border: 1px dashed #ff99c2;
+        }
+
+        .prank-gif {
+            font-size: 4rem;
+            letter-spacing: 12px;
+            margin: 15px 0;
+            transition: all 0.5s;
+        }
+
+        /* Animasi gemericik konfeti palsu */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #ff69b4;
+            opacity: 0.8;
+            top: -10px;
+            z-index: 9999;
+            pointer-events: none;
+            animation: fall 2s linear forwards;
+            border-radius: 50%;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* modal fake alert */
+        .modal-prank {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .modal-active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: #fff7fc;
+            max-width: 300px;
+            padding: 30px 20px;
+            border-radius: 70px 40px 70px 40px;
+            text-align: center;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+            border: 3px solid #ff98c2;
+            transform: scale(0.9);
+            transition: 0.2s;
+        }
+
+        .modal-active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content p {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #b6346e;
+            margin: 10px 0;
+        }
+
+        .close-modal {
+            background: #ff89be;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        /* efek teks menari */
+        .dance-text {
+            display: inline-block;
+            animation: shake 0.3s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg);}
+            25% { transform: rotate(2deg);}
+            75% { transform: rotate(-2deg);}
+            100% { transform: rotate(0deg);}
+        }
+
+        footer {
+            font-size: 0.7rem;
+            margin-top: 15px;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 500px) {
+            .prank-card {
+                padding: 20px 18px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .fake-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="prank-card" id="prankCard">
+    <div class="heart-emoji">🌸💖🌸</div>
+    <h1>✨ Prank Spesial ✨</h1>
+    <div class="message-box" id="mainMessage">
+        💌 Hai, Cantik! Ada sesuatu buat kamu nih... Klik tombol dibawah ya! 💌
+    </div>
+
+    <!-- Tombol jebakan utama -->
+    <button class="fake-button" id="trapButton">🎁 KLIK AKU DULU 🎁</button>
+
+    <div class="button-group">
+        <button class="prank-btn" id="mysteryBtn">❓ Kejutan misteri</button>
+        <button class="prank-btn" id="loveLetterBtn">💌 Surat Cinta Palsu</button>
+        <button class="prank-btn" id="confettiBtn">🎉 Pesta Konfeti 🎉</button>
+    </div>
+
+    <div class="secret-area" id="secretArea">
+        💬 *Prank Mode ON* : jangan marah ya, ini cuma bercanda! 💬
+    </div>
+    <div class="prank-gif" id="prankGifArea">
+        (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
+    </div>
+    <footer>✨ dibuat khusus untuk kamu dengan penuh canda ✨</footer>
+</div>
+
+<!-- Modal fake alert lucu -->
+<div id="fakeModal" class="modal-prank">
+    <div class="modal-content">
+        <span style="font-size: 3rem;">🤡💕</span>
+        <p id="modalText">PRANK!!! Kamu kena tipu~ 😜💖</p>
+        <button class="close-modal" id="closeModalBtn">OK OK</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Elemen
+        const trapBtn = document.getElementById('trapButton');
+        const mysteryBtn = document.getElementById('mysteryBtn');
+        const loveBtn = document.getElementById('loveLetterBtn');
+        const confettiBtn = document.getElementById('confettiBtn');
+        const mainMessageDiv = document.getElementById('mainMessage');
+        const secretAreaDiv = document.getElementById('secretArea');
+        const prankGifSpan = document.getElementById('prankGifArea');
+        const modal = document.getElementById('fakeModal');
+        const modalTextP = document.getElementById('modalText');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        // Fungsi show modal lucu dengan teks kustom
+        function showModal(message) {
+            modalTextP.innerText = message || "🤭 PRANK! Tapi kamu tetap imut 🤭";
+            modal.classList.add('modal-active');
+        }
+
+        // menutup modal
+        function closeModal() {
+            modal.classList.remove('modal-active');
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        // klik overlay juga nutup
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+
+        // Helper membuat konfeti warna-warni feminim
+        function createConfetti() {
+            for (let i = 0; i < 100; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                // warna pastel / pink / lavender / gold
+                const colors = ['#FFB7C5', '#FF9FBB', '#FDE2F3', '#FFC8DD', '#CDB4DB', '#FFAFCC', '#A2D2FF', '#FFD966'];
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.width = Math.random() * 12 + 5 + 'px';
+                conf.style.height = Math.random() * 12 + 5 + 'px';
+                conf.style.left = Math.random() * window.innerWidth + 'px';
+                conf.style.animationDuration = Math.random() * 1.5 + 1.2 + 's';
+                conf.style.animationDelay = Math.random() * 0.5 + 's';
+                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0%';
+                document.body.appendChild(conf);
+                setTimeout(() => { conf.remove(); }, 2200);
+            }
+        }
+
+        // fungsi untuk menampilkan prank pesan di message box sementara
+        function setTempMessage(msg, isPrank = true) {
+            const originalMsg = mainMessageDiv.innerText;
+            mainMessageDiv.innerHTML = msg + (isPrank ? " 😜💢" : " ✨");
+            // efek getar sedikit
+            mainMessageDiv.style.transform = "scale(1.02)";
+            setTimeout(() => { mainMessageDiv.style.transform = ""; }, 300);
+            // balikin pesan setelah 2 detik kalau bukan permanent?
+            // Tapi biar lebih menarik, kita kembalikan setelah 2.5 detik jika tombol yang dipanggil
+            if (isPrank) {
+                setTimeout(() => {
+                    if (mainMessageDiv.innerHTML.includes("😜💢") || mainMessageDiv.innerHTML.includes("Prank")) {
+                        mainMessageDiv.innerHTML = originalMsg;
+                    }
+                }, 2500);
+            }
+        }
+
+        // Tombol utama: TRAP -> prank klasik + suara hati palsu + modal
+        trapBtn.addEventListener('click', function() {
+            // efek pindah2 tombol?
+            trapBtn.innerText = "🤡 HUEHEHE PRANK! 🤡";
+            trapBtn.style.transform = "translateY(4px)";
+            trapBtn.style.boxShadow = "0 4px 0 #b24374";
+            setTimeout(() => {
+                trapBtn.innerText = "🎁 KLIK AKU DULU 🎁";
+                trapBtn.style.transform = "";
+                trapBtn.style.boxShadow = "0 8px 0 #b24374";
+            }, 1200);
+            
+            // Prank pesan lucu
+            setTempMessage("⚠️ PERINGATAN PRANK! Kamu baru saja kena tombol jebakan! Sekarang kamu harus tersenyum 😝💕", true);
+            showModal("📢 UPS! Ternyata ini cuma prank manis! Senyum dong biar tambah cantik 💖");
+            // ganti area gif animasi
+            prankGifSpan.innerHTML = "╰(*°▽°*)╯  PRANKED!  ╰(*°▽°*)╯";
+            setTimeout(() => {
+                prankGifSpan.innerHTML = "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧";
+            }, 2000);
+            // tambahan konfeti kecil biar happy
+            createConfetti();
+            // ubah secret area jadi bercanda
+            secretAreaDiv.innerHTML = "😂 Selamat! Kamu telah diprank dengan penuh cinta. Ga boleh marah ya! 😂💗";
+            setTimeout(() => {
+                if(secretAreaDiv.innerHTML.includes("Selamat")) 
+                    secretAreaDiv.innerHTML = "💬 *Prank Mode ON* : jangan marah ya, ini cuma bercanda! 💬";
+            }, 3500);
+        });
+
+        // Tombol misteri : efek ganti2 teks, dan prank "lagu galau palsu"
+        mysteryBtn.addEventListener('click', function() {
+            const randomPrankMessages = [
+                "🔮 Rahasia terungkap: kamu terlalu imut sampai website ini error! 🔮",
+                "🦄 Prank!!! Sebenarnya tombol ini tidak melakukan apa-apa... cuma bikin kamu penasaran ✨",
+                "🍬 Ternyata kamu jatuh cinta sama prank ini? Hehe maaf ya sayang 💘",
+                "🎈 Wah! Keyboard kamu tiba-tiba berubah warna jadi pink! (cuma prank doang kok)"
+            ];
+            const randMsg = randomPrankMessages[Math.floor(Math.random() * randomPrankMessages.length)];
+            setTempMessage(randMsg, true);
+            // bikin efek gemetar teks di h1
+            const h1 = document.querySelector('h1');
+            h1.classList.add('dance-text');
+            setTimeout(() => h1.classList.remove('dance-text'), 600);
+            // munculin modal random
+            const modalVariants = ["🔍 Detektif Prank: tidak ada yang serius disini, hanya senyuman!", "🌸 Kamu kepo banget sih! Tapi gapapa, kamu manis 💕", "🎭 Fun Fact: Website ini 100% dipenuhi cinta dan candaan 🩷"];
+            showModal(modalVariants[Math.floor(Math.random() * modalVariants.length)]);
+            // ubah prank gif area jadi lucu
+            prankGifSpan.innerHTML = "٩(◕‿◕｡)۶  Prank ceria ٩(◕‿◕｡)۶";
+            setTimeout(() => {
+                if(prankGifSpan.innerHTML.includes("Prank ceria")) prankGifSpan.innerHTML = "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧";
+            }, 1800);
+            // juga bikin sedikit konfeti
+            createConfetti();
+        });
+
+        // Surat cinta palsu : buka surat cinta tapi isinya prank
+        loveBtn.addEventListener('click', function() {
+            // ubah area message jadi surat cinta palsu yang panjang
+            const fakeLetter = `
+            💌💖 *Surat Untuk Kamu* 💖💌<br><br>
+            Hai ... Aku sudah lama diam-diam suka sama kamu... setiap hari aku selalu<br>
+            memikirkan senyummu... tapi sayang...<br>
+            <span style="background:pink;">INI CUMA PRANK!!! 😂💢</span><br>
+            Tapi yang jujur, kamu memang luar biasa, jadi jangan sedih yaa 💕
+            `;
+            mainMessageDiv.innerHTML = fakeLetter;
+            // bounce efek
+            mainMessageDiv.style.animation = "shake 0.5s ease";
+            setTimeout(() => { mainMessageDiv.style.animation = ""; }, 500);
+            showModal("HAHAHA TERPRANK SAMA SURAT CINTA PALSU! Tapi senyummu lebih indah dari prank ini 💖");
+            // ubah prank area jd gambar love prank
+            prankGifSpan.innerHTML = "💘💔💘  Prank Love  💘💔💘";
+            setTimeout(() => {
+                if (prankGifSpan.innerHTML.includes("Prank Love")) prankGifSpan.innerHTML = "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧";
+            }, 2200);
+            // kembalikan pesan setelah 4 detik
+            setTimeout(() => {
+                if (mainMessageDiv.innerHTML.includes("Surat Untuk Kamu") || mainMessageDiv.innerHTML.includes("INI CUMA PRANK")) {
+                    mainMessageDiv.innerHTML = "💌 Hai, Cantik! Ada sesuatu buat kamu nih... Klik tombol dibawah ya! 💌";
+                }
+            }, 4500);
+            createConfetti();
+            // ubah secret area jadi pesan romantis palsu
+            secretAreaDiv.innerHTML = "💗 PS: Tapi sebenarnya, kamu memang special kok! 💗 (masih prank juga sih hihi)";
+            setTimeout(() => {
+                if(secretAreaDiv.innerHTML.includes("special kok")) 
+                    secretAreaDiv.innerHTML = "💬 *Prank Mode ON* : jangan marah ya, ini cuma bercanda! 💬";
+            }, 4000);
+        });
+
+        // Tombol konfeti : sebenarnya full konfeti + prank "tombol palsu"
+        confettiBtn.addEventListener('click', function() {
+            // pesta konfeti berlimpah
+            for(let i = 0; i < 2; i++) {
+                setTimeout(() => createConfetti(), i * 200);
+            }
+            createConfetti(); // langsung double
+            setTempMessage("🎊 WEEEE PESTA KONFETI! Tapi ternyata ini juga prank~ tombol konfeti cuma buat senang-senang aja! 🎊", true);
+            showModal("✨ Konfeti bertebaran buat kamu! Semoga harimu selalu penuh warna! (eh ini prank yang baik kok) ✨");
+            // efek ganti background card kedip pink
+            const card = document.querySelector('.prank-card');
+            card.style.transition = "0.1s";
+            card.style.boxShadow = "0 0 0 6px #ffb7d2, 0 0 0 12px #ff69b4";
+            setTimeout(() => {
+                card.style.boxShadow = "0 30px 40px rgba(0, 0, 0, 0.2), 0 0 0 12px #ffe4f0, 0 0 0 15px #ffb7d2";
+            }, 500);
+            // tambah efek teks di prank gif area
+            prankGifSpan.innerHTML = "🎉✨ CONFetti Party ✨🎉";
+            setTimeout(() => {
+                if(prankGifSpan.innerHTML.includes("CONFetti")) prankGifSpan.innerHTML = "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧";
+            }, 2000);
+        });
+
+        // Tambahan interaksi kecil: ketika user mencoba klik kanan atau double klik -> prank ringan
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showModal("⚠️ Hei! klik kanan tidak akan menyelamatkanmu dari prank manis ini 😜💕");
+            return false;
+        });
+
+        // kejutan: Saat mouse bergerak terlalu banyak di card, muncul efek random
+        let moveCount = 0;
+        const cardArea = document.querySelector('.prank-card');
+        cardArea.addEventListener('mousemove', function() {
+            moveCount++;
+            if(moveCount % 25 === 0 && moveCount < 100) {
+                // hanya sesekali biar tidak mengganggu
+                const randomTaunt = ["👀 Kamu penasaran banget ya?", "💕 Jangan tegang, ini cuma prank lucu~", "🌸 Pencet aja tombolnya, seru loh!"];
+                const randomIndex = Math.floor(Math.random() * randomTaunt.length);
+                secretAreaDiv.innerHTML = randomTaunt[randomIndex];
+                setTimeout(() => {
+                    if(secretAreaDiv.innerHTML !== "💬 *Prank Mode ON* : jangan marah ya, ini cuma bercanda! 💬")
+                        secretAreaDiv.innerHTML = "💬 *Prank Mode ON* : jangan marah ya, ini cuma bercanda! 💬";
+                }, 1500);
+            }
+        });
+
+        // bonus tombol tersembunyi: klik 5 kali di footer bakal muncul easter egg
+        let footerClicks = 0;
+        const footerEl = document.querySelector('footer');
+        footerEl.style.cursor = "pointer";
+        footerEl.addEventListener('click', function() {
+            footerClicks++;
+            if (footerClicks === 3) {
+                showModal("🥳 SELAMAT! Kamu menemukan easter egg! 🥳 <br> Kamu wanita paling beruntung karena hari ini diprank penuh cinta 💖");
+                createConfetti();
+                prankGifSpan.innerHTML = "🐣✨ EGGLUV PRANK ✨🐣";
+                setTimeout(() => {
+                    prankGifSpan.innerHTML = "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧";
+                }, 3000);
+                footerClicks = 0;
+            } else if(footerClicks > 5) {
+                footerClicks = 0;
+            }
+        });
+
+        // tambahan efek gombal prank: judul berkedip
+        setInterval(() => {
+            const titleHeart = document.querySelector('.heart-emoji');
+            if(titleHeart) {
+                titleHeart.style.transform = "scale(1.05)";
+                setTimeout(() => { if(titleHeart) titleHeart.style.transform = ""; }, 500);
+            }
+        }, 3000);
+    })();
+</script>
+</body>
+</html>
