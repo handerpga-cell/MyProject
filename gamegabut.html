@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Burung Run: Kejar Serigala | Endless Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a2f2a 0%, #051e1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            position: relative;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 32px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 3px rgba(255, 215, 150, 0.6);
+            cursor: pointer;
+            background-color: #1f4e3c;
+        }
+
+        .hud {
+            width: 900px;
+            max-width: 90vw;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            padding: 10px 24px;
+            border-radius: 80px;
+            color: #f9e7b3;
+            text-shadow: 0 2px 3px black;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .score-box, .best-box {
+            font-size: 1.7rem;
+            background: #1e2a1f;
+            padding: 5px 18px;
+            border-radius: 3rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .score-box span, .best-box span {
+            font-size: 1rem;
+            color: #ffd966;
+        }
+
+        .restart-btn {
+            background: #dc7f2c;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 5px 20px;
+            border-radius: 3rem;
+            color: #2c1a0c;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: monospace;
+            box-shadow: 0 4px 0 #784a1a;
+        }
+
+        .restart-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #784a1a;
+        }
+
+        .controls-info {
+            margin-top: 15px;
+            background: #00000077;
+            padding: 8px 20px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ecd9b4;
+            display: flex;
+            gap: 28px;
+            backdrop-filter: blur(5px);
+        }
+
+        .controls-info kbd {
+            background: #222;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 1rem;
+            margin: 0 6px;
+            box-shadow: inset 0 1px 0 0 #5f5f5f, 0 2px 0 #000;
+        }
+
+        @media (max-width: 700px) {
+            .score-box, .best-box { font-size: 1.2rem; padding: 3px 12px; }
+            .controls-info { font-size: 0.7rem; gap: 12px; }
+            .hud { padding: 6px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="game-container">
+        <div class="hud">
+            <div class="score-box">🏆 SKOR: <span id="scoreValue">0</span></div>
+            <div class="best-box">⭐ TERBAIK: <span id="bestValue">0</span></div>
+            <button class="restart-btn" id="resetGameBtn">🔄 LARI LAGI</button>
+        </div>
+        <canvas id="gameCanvas" width="900" height="500"></canvas>
+        <div class="controls-info">
+            <span>⬅️ <kbd>A</kbd> / <kbd>←</kbd></span>
+            <span>➡️ <kbd>D</kbd> / <kbd>→</kbd></span>
+            <span>🦶 LONCAT <kbd>SPACE</kbd> / <kbd>↑</kbd> / <kbd>W</kbd></span>
+            <span>📱 Geser / Tap (mobile)</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- CANVAS ----------
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ---------- GAME STATE ----------
+        let gameRunning = true;
+        let score = 0;
+        let bestScore = localStorage.getItem('birdRunBest') ? parseInt(localStorage.getItem('birdRunBest')) : 0;
+        document.getElementById('bestValue').innerText = bestScore;
+
+        // Update skor tampilan
+        function updateScoreUI(){
+            document.getElementById('scoreValue').innerText = Math.floor(score);
+            if(score > bestScore){
+                bestScore = Math.floor(score);
+                localStorage.setItem('birdRunBest', bestScore);
+                document.getElementById('bestValue').innerText = bestScore;
+            }
+        }
+
+        // ---------- KARAKTER PEMERAN UTAMA: MANUSIA BURUNG ----------
+        const PLAYER_WIDTH = 38;
+        const PLAYER_HEIGHT = 48;
+        let player = {
+            x: 150,          // tetap di kiri tapi jalur relatif
+            lane: 1,        // 0 = kiri, 1 = tengah, 2 = kanan
+            y: 0,           // dinamis saat melompat
+            baseY: 0,
+            isJumping: false,
+            jumpVel: 0,
+            gravity: 0.8,
+            jumpPower: -10.5,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT
+        };
+
+        // Jalur (track) untuk endless runner style
+        const LANE_POSITIONS = [200, 450, 700];  // X untuk setiap jalur (0,1,2)
+        const GROUND_LEVEL = 410;    // tanah Y (pixel dari atas canvas)
+        player.baseY = GROUND_LEVEL - PLAYER_HEIGHT;
+        player.y = player.baseY;
+
+        // ---------- MUSUH: SERIGALA ----------
+        let wolves = [];   // setiap serigala: { x, lane, width, height, active, type }
+        const WOLF_WIDTH = 42;
+        const WOLF_HEIGHT = 42;
+        let frameCounter = 0;
+        let spawnDelay = 45;      // frame antar spawn makin cepat seiring skor
+        let baseSpawnDelay = 50;
+
+        // ---------- OBSTACLE / KOLEKTIBEL (tulang atau bulu) tambahan biar kompleks ----------
+        let powerups = [];   // item berupa "feather" (menambah skor + nyawa semu?)
+        // Tapi kita buat item 'bulu emas' +5 poin cepat
+        const ITEM_WIDTH = 24;
+        const ITEM_HEIGHT = 24;
+
+        // Efek visual
+        let particles = [];
+
+        // ---------- KONTROL ----------
+        const keys = {
+            ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false,
+            Space: false, ArrowUp: false, KeyW: false
+        };
+
+        // cooldown lompat ganda biar fair
+        let canJump = true;
+        let jumpCooldown = 0;
+
+        // ---------- FUNGSI UTAMA ----------
+        function resetGame(){
+            gameRunning = true;
+            score = 0;
+            updateScoreUI();
+            wolves = [];
+            powerups = [];
+            particles = [];
+            player.lane = 1;
+            player.isJumping = false;
+            player.jumpVel = 0;
+            player.y = player.baseY;
+            canJump = true;
+            jumpCooldown = 0;
+            frameCounter = 0;
+            baseSpawnDelay = 50;
+            spawnDelay = baseSpawnDelay;
+            // reset key lock
+            for(let k in keys) keys[k] = false;
+        }
+
+        // spawn serigala di lane random
+        function spawnWolf(){
+            if(!gameRunning) return;
+            let lane = Math.floor(Math.random() * 3);
+            // hindari spawn terlalu dekat dengan player jika baru mulai? tidak masalah asal fair
+            wolves.push({
+                x: canvas.width,
+                lane: lane,
+                width: WOLF_WIDTH,
+                height: WOLF_HEIGHT,
+                active: true
+            });
+        }
+
+        // spawn item (bulu emas) tambah skor + bonus
+        function spawnItem(){
+            if(!gameRunning) return;
+            if(Math.random() < 0.35){ // 35% setiap cycle spawn item
+                let lane = Math.floor(Math.random() * 3);
+                powerups.push({
+                    x: canvas.width,
+                    lane: lane,
+                    width: ITEM_WIDTH,
+                    height: ITEM_HEIGHT,
+                    type: 'feather'
+                });
+            }
+        }
+
+        // partikel debu / efek saat lompat atau kena
+        function addParticles(x, y, color, count=5){
+            for(let i=0;i<count;i++){
+                particles.push({
+                    x: x + (Math.random() - 0.5)*12,
+                    y: y + (Math.random() - 0.5)*10,
+                    vx: (Math.random() - 0.5)*3,
+                    vy: (Math.random() - 0.5)*3 - 1,
+                    life: 0.7,
+                    color: color,
+                    size: 3+Math.random()*4
+                });
+            }
+        }
+
+        // update physics player
+        function updatePlayer(){
+            if(!gameRunning) return;
+
+            // lompat logika
+            let jumpRequest = (keys.Space || keys.ArrowUp || keys.KeyW);
+            if(jumpRequest && !player.isJumping && canJump && jumpCooldown <= 0){
+                player.isJumping = true;
+                player.jumpVel = player.jumpPower;
+                canJump = false;
+                jumpCooldown = 10;
+                addParticles(player.x+PLAYER_WIDTH/2, player.y+PLAYER_HEIGHT-5, "#e0b07f", 8);
+                // suara imajiner efek
+            }
+
+            if(jumpCooldown > 0) jumpCooldown--;
+            if(!player.isJumping && jumpCooldown <=0 && !player.isJumping) canJump = true;
+
+            // gravitasi
+            if(player.isJumping){
+                player.jumpVel += player.gravity;
+                player.y += player.jumpVel;
+                if(player.y >= player.baseY){
+                    player.y = player.baseY;
+                    player.isJumping = false;
+                    player.jumpVel = 0;
+                    // saat mendarat debu
+                    addParticles(player.x+PLAYER_WIDTH/2, player.y+PLAYER_HEIGHT-2, "#bc9a6c", 4);
+                }
+            } else {
+                player.y = player.baseY;
+            }
+
+            // update posisi X berdasarkan lane (visual)
+            player.x = LANE_POSITIONS[player.lane] - PLAYER_WIDTH/2;
+            // clamp biar tidak terlalu keluar
+            player.x = Math.min(Math.max(player.x, 10), canvas.width - PLAYER_WIDTH - 10);
+        }
+
+        // update gerakan musuh & item, collision
+        function updateWorld(){
+            if(!gameRunning) return;
+
+            // Geser musuh ke kiri
+            for(let i=0; i<wolves.length; i++){
+                wolves[i].x -= 7.5;
+                if(wolves[i].x + wolves[i].width < 0){
+                    wolves.splice(i,1);
+                    i--;
+                }
+            }
+
+            // Geser item
+            for(let i=0; i<powerups.length; i++){
+                powerups[i].x -= 7;
+                if(powerups[i].x + powerups[i].width < 0){
+                    powerups.splice(i,1);
+                    i--;
+                }
+            }
+
+            // Collision dengan serigala (game over)
+            for(let wolf of wolves){
+                if(wolf.lane === player.lane && !player.isJumping){
+                    // bounding box collision serius
+                    let wolfRect = { x: wolf.x, y: GROUND_LEVEL - WOLF_HEIGHT, w: WOLF_WIDTH, h: WOLF_HEIGHT };
+                    let playerRect = { x: player.x, y: player.y, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+                    if(playerRect.x < wolfRect.x + wolfRect.w &&
+                        playerRect.x + playerRect.w > wolfRect.x &&
+                        playerRect.y < wolfRect.y + wolfRect.h &&
+                        playerRect.y + playerRect.h > wolfRect.y){
+                        gameRunning = false;
+                        addParticles(player.x+PLAYER_WIDTH/2, player.y+PLAYER_HEIGHT/2, "#d43f1f", 20);
+                        return;
+                    }
+                }
+                // juga saat melompat di atas serigala? kita biarkan instant game over karena serigala menggigit
+                // tapi jika lompat di atas tidak kena bounding tetap bisa, sudah dicek bounding.
+            }
+
+            // COLLECTION ITEM + poin
+            for(let i=0; i<powerups.length; i++){
+                let item = powerups[i];
+                if(item.lane === player.lane){
+                    let itemRect = { x: item.x, y: GROUND_LEVEL - ITEM_HEIGHT, w: ITEM_WIDTH, h: ITEM_HEIGHT };
+                    let playerRect = { x: player.x, y: player.y, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+                    if(playerRect.x < itemRect.x + itemRect.w &&
+                        playerRect.x + playerRect.w > itemRect.x &&
+                        playerRect.y < itemRect.y + itemRect.h &&
+                        playerRect.y + playerRect.h > itemRect.y){
+                        // ambil item
+                        score += 12;
+                        updateScoreUI();
+                        addParticles(item.x+ITEM_WIDTH/2, item.y+ITEM_HEIGHT/2, "#f7d44a", 10);
+                        powerups.splice(i,1);
+                        i--;
+                    }
+                }
+            }
+
+            // skor bertambah seiring waktu (survival)
+            score += 0.18;
+            updateScoreUI();
+
+            // spawn musuh berdasarkan delay yang makin cepat
+            frameCounter++;
+            let dynamicSpawn = Math.max(22, baseSpawnDelay - Math.floor(score / 400));
+            if(frameCounter >= dynamicSpawn){
+                frameCounter = 0;
+                if(gameRunning){
+                    spawnWolf();
+                    spawnItem(); // spawn item bersama musuh
+                }
+            }
+
+            // sedikit kesulitan: kadang spawn tambahan jika skor tinggi
+            if(score > 800 && Math.random()<0.008 && gameRunning){
+                if(wolves.length < 5) spawnWolf();
+            }
+        }
+
+        // partikel update
+        function updateParticles(){
+            for(let i=0;i<particles.length;i++){
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].life -= 0.02;
+                particles[i].vy += 0.2;
+                if(particles[i].life <=0 || particles[i].y > canvas.height+50){
+                    particles.splice(i,1);
+                    i--;
+                }
+            }
+        }
+
+        // ---------- GAMBAR SEMUA ELEMEN DENGAN GAYA KOMPLEKS ----------
+        function drawBackground(){
+            // gradien langit senja
+            const grad = ctx.createLinearGradient(0,0,0,300);
+            grad.addColorStop(0,"#ffb347");
+            grad.addColorStop(0.5,"#ff7e5e");
+            grad.addColorStop(1,"#6b2e1e");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+            // awan-awan
+            ctx.fillStyle = "rgba(255,245,210,0.7)";
+            ctx.beginPath();
+            ctx.ellipse(120, 70, 50, 35, 0, 0, Math.PI*2);
+            ctx.ellipse(180, 55, 45, 32, 0, 0, Math.PI*2);
+            ctx.ellipse(70, 55, 40, 30, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(750, 90, 65, 40, 0, 0, Math.PI*2);
+            ctx.ellipse(820, 75, 50, 35, 0, 0, Math.PI*2);
+            ctx.fill();
+            // tanah
+            ctx.fillStyle = "#4a3b28";
+            ctx.fillRect(0, GROUND_LEVEL-8, canvas.width, 18);
+            ctx.fillStyle = "#82643b";
+            ctx.fillRect(0, GROUND_LEVEL-4, canvas.width, 12);
+            ctx.fillStyle = "#b97f44";
+            for(let i=0;i<12;i++){
+                ctx.fillRect(i*80 + (Date.now()*0.003 %80), GROUND_LEVEL-14, 12, 8);
+            }
+            // rel / jalan
+            ctx.beginPath();
+            ctx.strokeStyle = "#ecca6c";
+            ctx.lineWidth = 4;
+            for(let i=0;i<3;i++){
+                let laneX = LANE_POSITIONS[i];
+                ctx.beginPath();
+                ctx.setLineDash([15, 25]);
+                ctx.moveTo(laneX-20, GROUND_LEVEL-12);
+                ctx.lineTo(laneX-20, GROUND_LEVEL+8);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(laneX+20, GROUND_LEVEL-12);
+                ctx.lineTo(laneX+20, GROUND_LEVEL+8);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
+
+        function drawWolf(x, y, w, h){
+            // Serigala galak
+            ctx.save();
+            ctx.shadowBlur=4;
+            ctx.fillStyle = "#3f3f44";
+            ctx.beginPath();
+            ctx.ellipse(x+w/2, y+h/2, w/2.2, h/2.2, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#252525";
+            ctx.beginPath();
+            ctx.ellipse(x+w*0.35, y+h*0.45, 6, 7, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#ff6a2c";
+            ctx.beginPath();
+            ctx.ellipse(x+w*0.65, y+h*0.45, 6, 7, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(x+w*0.3, y+h*0.4, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#000";
+            ctx.beginPath();
+            ctx.arc(x+w*0.28, y+h*0.38, 1.2, 0, Math.PI*2);
+            ctx.fill();
+            // telinga
+            ctx.fillStyle = "#2e2e2e";
+            ctx.beginPath();
+            ctx.moveTo(x+w*0.2, y-5);
+            ctx.lineTo(x+w*0.35, y+8);
+            ctx.lineTo(x+w*0.1, y+8);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x+w*0.8, y-5);
+            ctx.lineTo(x+w*0.65, y+8);
+            ctx.lineTo(x+w*0.9, y+8);
+            ctx.fill();
+            ctx.fillStyle = "#b33b1c";
+            ctx.beginPath();
+            ctx.ellipse(x+w*0.7, y+h*0.7, 8, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawHumanBird(x, y, w, h){
+            ctx.save();
+            ctx.shadowBlur=2;
+            // badan manusia burung: bulu, topeng paruh
+            ctx.fillStyle = "#e0b05c";
+            ctx.beginPath();
+            ctx.ellipse(x+w/2, y+h*0.6, w/2.3, h/2.2, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#c97e3a";
+            ctx.beginPath();
+            ctx.ellipse(x+w/2, y+h*0.45, w*0.3, h*0.28, 0, 0, Math.PI*2);
+            ctx.fill();
+            // paruh
+            ctx.fillStyle = "#ff8c42";
+            ctx.beginPath();
+            ctx.moveTo(x+w*0.65, y+h*0.42);
+            ctx.lineTo(x+w*0.85, y+h*0.48);
+            ctx.lineTo(x+w*0.68, y+h*0.55);
+            ctx.fill();
+            // mata
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(x+w*0.4, y+h*0.4, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#141414";
+            ctx.beginPath();
+            ctx.arc(x+w*0.38, y+h*0.39, 2.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(x+w*0.35, y+h*0.37, 1, 0, Math.PI*2);
+            ctx.fill();
+            // bulu sayap
+            ctx.fillStyle = "#ad7a4b";
+            for(let i=0;i<3;i++){
+                ctx.beginPath();
+                ctx.moveTo(x+w*0.2, y+h*0.55 + i*6);
+                ctx.lineTo(x+w*0.02, y+h*0.5 + i*7);
+                ctx.lineTo(x+w*0.18, y+h*0.62 + i*4);
+                ctx.fill();
+            }
+            // kaki panjang
+            ctx.fillStyle = "#d48f3b";
+            ctx.fillRect(x+w*0.3, y+h-6, 7, 14);
+            ctx.fillRect(x+w*0.55, y+h-6, 7, 14);
+            // mahkota bulu
+            ctx.fillStyle = "#e6a843";
+            ctx.beginPath();
+            ctx.moveTo(x+w*0.5, y-3);
+            ctx.lineTo(x+w*0.35, y+6);
+            ctx.lineTo(x+w*0.65, y+6);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawItem(x,y,w,h,type){
+            ctx.save();
+            ctx.shadowBlur=5;
+            ctx.fillStyle = "#f5bc70";
+            ctx.beginPath();
+            ctx.ellipse(x+w/2, y+h/2, w/2, h/2, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#ffd966";
+            ctx.font = `bold ${w-4}px monospace`;
+            ctx.fillText("⚡", x+4, y+h-6);
+            ctx.fillStyle = "#d49b2a";
+            ctx.fillText("🪶", x+2, y+14);
+            ctx.restore();
+        }
+
+        function drawParticles(){
+            for(let p of particles){
+                ctx.globalAlpha = p.life * 0.9;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawGameOverlay(){
+            if(!gameRunning){
+                ctx.fillStyle = "rgba(0,0,0,0.75)";
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.font = "bold 40monospace";
+                ctx.fillStyle = "#ffbc6e";
+                ctx.shadowBlur=0;
+                ctx.fillText("☠️ DITERKA SERIGALA ☠️", canvas.width/2-200, canvas.height/2-40);
+                ctx.font = "24px monospace";
+                ctx.fillStyle = "#ffe2b5";
+                ctx.fillText("Tekan 'LARI LAGI' untuk terbang lagi!", canvas.width/2-210, canvas.height/2+40);
+            }
+        }
+
+        // ---------- LOOP UTAMA ----------
+        function updateGame(){
+            if(gameRunning){
+                updatePlayer();
+                updateWorld();
+                updateParticles();
+            } else {
+                updateParticles();
+            }
+        }
+
+        function draw(){
+            drawBackground();
+            // gambar item
+            for(let it of powerups){
+                let yPos = GROUND_LEVEL - ITEM_HEIGHT;
+                drawItem(it.x, yPos, ITEM_WIDTH, ITEM_HEIGHT, it.type);
+            }
+            // gambar serigala
+            for(let wolf of wolves){
+                let yPos = GROUND_LEVEL - WOLF_HEIGHT;
+                drawWolf(wolf.x, yPos, WOLF_WIDTH, WOLF_HEIGHT);
+            }
+            // gambar player utama
+            drawHumanBird(player.x, player.y, PLAYER_WIDTH, PLAYER_HEIGHT);
+            drawParticles();
+            drawGameOverlay();
+
+            // efek skor tinggi
+            ctx.font = "bold 24px 'Courier New'";
+            ctx.fillStyle = "#FFF3cf";
+            ctx.shadowBlur = 0;
+            ctx.fillText(`⚡ ${Math.floor(score)} m`, 30, 55);
+        }
+
+        // ---------- INPUT HANDLER ----------
+        function handleKeyDown(e){
+            let code = e.code;
+            if(keys.hasOwnProperty(code)){
+                keys[code] = true;
+                e.preventDefault();
+            }
+            // pindah jalur menggunakan A/D atau panah kiri/kanan
+            if(gameRunning){
+                if(code === 'ArrowLeft' || code === 'KeyA'){
+                    player.lane = Math.max(0, player.lane-1);
+                    e.preventDefault();
+                }
+                else if(code === 'ArrowRight' || code === 'KeyD'){
+                    player.lane = Math.min(2, player.lane+1);
+                    e.preventDefault();
+                }
+            }
+            // restart dengan R? tapi ada tombol, jangan bentrok
+            if(code === 'KeyR'){
+                resetGame();
+                e.preventDefault();
+            }
+        }
+
+        function handleKeyUp(e){
+            let code = e.code;
+            if(keys.hasOwnProperty(code)){
+                keys[code] = false;
+                e.preventDefault();
+            }
+        }
+
+        // Mobile touch (geser / tap)
+        let touchStartX = 0;
+        function handleTouchStart(e){
+            e.preventDefault();
+            let rect = canvas.getBoundingClientRect();
+            let touchX = e.touches[0].clientX - rect.left;
+            touchStartX = touchX;
+            // juga untuk lompat: tap di tengah bawah?
+            if(gameRunning){
+                // Lompat dengan sentuhan sederhana
+                if(!player.isJumping && canJump && jumpCooldown<=0){
+                    player.isJumping = true;
+                    player.jumpVel = player.jumpPower;
+                    canJump = false;
+                    jumpCooldown = 10;
+                    addParticles(player.x+PLAYER_WIDTH/2, player.y+PLAYER_HEIGHT-5, "#f5bc70", 7);
+                }
+            }
+        }
+
+        function handleTouchMove(e){
+            e.preventDefault();
+            if(!gameRunning) return;
+            let rect = canvas.getBoundingClientRect();
+            let currentX = e.touches[0].clientX - rect.left;
+            let diff = currentX - touchStartX;
+            if(diff > 25){
+                player.lane = Math.min(2, player.lane+1);
+                touchStartX = currentX;
+            } else if(diff < -25){
+                player.lane = Math.max(0, player.lane-1);
+                touchStartX = currentX;
+            }
+        }
+
+        // Event binding
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        canvas.addEventListener('touchstart', handleTouchStart, {passive:false});
+        canvas.addEventListener('touchmove', handleTouchMove, {passive:false});
+        canvas.addEventListener('touchend', (e)=>e.preventDefault());
+
+        document.getElementById('resetGameBtn').addEventListener('click', ()=>{
+            resetGame();
+        });
+
+        // animasi frame
+        function animate(){
+            updateGame();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        resetGame();
+        animate();
+    })();
+</script>
+</body>
+</html>
