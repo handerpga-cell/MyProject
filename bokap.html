@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🔍 System Check · Verifikasi Akses</title>
+    <style>
+        /* TEMA BIASA – seolah hanya halaman loading / maintenance */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            user-select: none;
+        }
+
+        body {
+            background: #f2f5f9;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 16px;
+            transition: background 0.1s;
+        }
+
+        /* Card netral – seperti dashboard biasa */
+        .card {
+            max-width: 520px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            padding: 36px 32px 40px;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1px solid #e9edf4;
+        }
+
+        h1 {
+            font-weight: 520;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .subhead {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 400;
+            margin-bottom: 28px;
+            border-bottom: 1px dashed #dce2ec;
+            padding-bottom: 18px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafcff;
+            padding: 12px 18px;
+            border-radius: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #eef2f8;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        .progress-container {
+            background: #e6edf6;
+            height: 10px;
+            border-radius: 40px;
+            margin: 20px 0 26px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #3b7cbf;
+            border-radius: 40px;
+            transition: width 0.18s cubic-bezier(0.2, 0.9, 0.4, 1);
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .status-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            margin: 12px 0 18px;
+        }
+
+        .dot-pulse {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #2ecc71;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5);
+            animation: pulse-green 1.6s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .hint-text {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 24px;
+        }
+
+        .secure-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eef6ff;
+            padding: 6px 16px;
+            border-radius: 40px;
+            color: #2563eb;
+            font-size: 0.9rem;
+            font-weight: 470;
+        }
+
+        /* ----- LAYER JUMPS CARE (tersembunyi, meledak tiba²) ----- */
+        .jumpscare-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.02s;
+            will-change: opacity;
+        }
+
+        .jumpscare-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .jumpscare-face {
+            max-width: 95vw;
+            max-height: 95vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: brightness(1.1) contrast(1.2);
+            transform: scale(1);
+            animation: shakeAndGlitch 0.35s cubic-bezier(0.1, 0.7, 0.3, 1.4) forwards;
+            image-rendering: crisp-edges; 
+        }
+
+        /* Animasi kaget brutal */
+        @keyframes shakeAndGlitch {
+            0% { transform: scale(0.3) rotate(0deg); filter: blur(2px) brightness(1.4); }
+            20% { transform: scale(1.5) rotate(2deg); filter: blur(0.5px) brightness(1.8); }
+            40% { transform: scale(0.95) rotate(-3deg); filter: blur(0px) brightness(1.2); }
+            60% { transform: scale(1.3) rotate(4deg); filter: blur(0.3px) brightness(1.5); }
+            80% { transform: scale(1.1) rotate(-1deg); }
+            100% { transform: scale(1.2) rotate(0deg); filter: blur(0) brightness(1.2); }
+        }
+
+        /* Suasana horor tambahan — flash putih */
+        .flash-sync {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9998;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.04s;
+        }
+
+        .flash-sync.fire {
+            opacity: 0.9;
+            animation: flashFade 0.2s forwards;
+        }
+
+        @keyframes flashFade {
+            0% { opacity: 0.9; }
+            100% { opacity: 0; }
+        }
+
+        /* Agar tampilan biasa TIDAK mengindikasikan jumpscare */
+        .normal-mode {
+            display: block;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #8698aa;
+        }
+
+        /* Efek samar seperti static noise tipis */
+        body.pre-jumpscare {
+            background: #eef2f6;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TAMPILAN BIASA (loading / verifikasi) -->
+<div class="card" id="mainCard">
+    <div style="margin-bottom: 6px;">
+        <span class="secure-badge">
+            <span>🛡️</span> SECURE CHECK · v2.4.1
+        </span>
+    </div>
+    <h1>Verifikasi Akses</h1>
+    <div class="subhead">sedang memeriksa lingkungan...</div>
+
+    <div class="info-row">
+        <span>🌐 Sesi Aman</span>
+        <span style="font-family: monospace; background: #eef2f6; padding: 4px 12px; border-radius: 30px;">TLS 1.3</span>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="status-line" id="statusText">
+        <span class="dot-pulse"></span> 
+        <span id="statusMessage">Menyiapkan koneksi aman...</span>
+    </div>
+
+    <!-- Elemen tidak mencurigakan -->
+    <div style="display: flex; justify-content: center; gap: 24px; margin: 8px 0 4px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;"></span>
+            <span style="font-size: 0.85rem;">enkripsi AES-256</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #f1c40f; border-radius: 50%;"></span>
+            <span style="font-size: 0.85rem;">pemindaian paket</span>
+        </div>
+    </div>
+
+    <div class="hint-text">
+        ⏳ Mohon tunggu, jangan tutup halaman ini.
+    </div>
+    <div class="footer-note">
+        © 2026 · Identity Checkpoint
+    </div>
+</div>
+
+<!-- LAPISAN JUMPS CARE (Tersembunyi) -->
+<div class="jumpscare-overlay" id="jumpscareOverlay">
+    <!-- Gambar jumpscare: SVG WAJAH HANTU MENGERIKAN (high-contrast) agar 98% kaget -->
+    <svg class="jumpscare-face" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <defs>
+            <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#1a0000"/>
+                <stop offset="100%" stop-color="#000000"/>
+            </radialGradient>
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+        <!-- latar gelap -->
+        <rect width="500" height="500" fill="url(#bgGrad)"/>
+        
+        <!-- mata kiri besar & menyeramkan -->
+        <circle cx="160" cy="180" r="58" fill="#0a0a0a" stroke="#3c0000" stroke-width="6"/>
+        <circle cx="160" cy="180" r="38" fill="#f5f9ff" filter="url(#glow)"/>
+        <circle cx="160" cy="180" r="22" fill="#cc0000"/>
+        <circle cx="160" cy="180" r="10" fill="#000000"/>
+        <!-- titik darah -->
+        <circle cx="140" cy="210" r="6" fill="#aa0000"/>
+        <circle cx="180" cy="220" r="5" fill="#8b0000"/>
+
+        <!-- mata kanan -->
+        <circle cx="340" cy="180" r="58" fill="#0a0a0a" stroke="#3c0000" stroke-width="6"/>
+        <circle cx="340" cy="180" r="38" fill="#f5f9ff" filter="url(#glow)"/>
+        <circle cx="340" cy="180" r="22" fill="#cc0000"/>
+        <circle cx="340" cy="180" r="10" fill="#000000"/>
+        <circle cx="320" cy="205" r="6" fill="#aa0000"/>
+        <circle cx="360" cy="215" r="7" fill="#7a0000"/>
+
+        <!-- mulut menganga lebar + gigi tajam -->
+        <path d="M120 310 Q250 480 380 310 Q370 370 250 420 Q130 370 120 310" fill="#1c0000" stroke="#4a0000" stroke-width="8"/>
+        <!-- gigi atas -->
+        <polygon points="150,305 165,355 180,305" fill="#f0e6d2"/>
+        <polygon points="190,295 210,365 225,295" fill="#e0d6c0"/>
+        <polygon points="235,290 255,375 270,290" fill="#f0e6d2"/>
+        <polygon points="280,290 300,365 315,295" fill="#e0d6c0"/>
+        <polygon points="325,300 340,350 355,305" fill="#f0e6d2"/>
+        <!-- gigi bawah -->
+        <polygon points="160,360 175,310 190,365" fill="#c0b09a"/>
+        <polygon points="210,370 225,320 240,375" fill="#b0a090"/>
+        <polygon points="260,375 275,315 290,375" fill="#c0b09a"/>
+        <polygon points="310,365 325,320 340,360" fill="#b0a090"/>
+
+        <!-- coretan darah -->
+        <path d="M60 70 L120 140 L80 160" stroke="#b00000" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M420 90 L380 150 L440 170" stroke="#a00000" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+        <!-- teks seram tambahan (halus) -->
+        <text x="250" y="470" font-family="monospace" font-size="28" fill="#6b0000" text-anchor="middle" font-weight="bold" letter-spacing="8">JANGAN BERPALING</text>
+    </svg>
+</div>
+
+<!-- FLASH PUTIH (meningkatkan kaget) -->
+<div class="flash-sync" id="flashScreen"></div>
+
+<!-- AUDIO CONTEXT (Kaget suara – sangat efektif) -->
+<!-- Catatan: Autoplay dengan user interaction diperbolehkan karena dimulai dari progress yang dipicu klik/tap -->
+<audio id="screamAudio" preload="auto">
+    <!-- Menggunakan WAV base64 pendek: jeritan high pitch + static (dibuat dengan generator) -->
+    <source src="data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgICAf39/f39/f3+AgIB/f39/f3+AgICAf39/f39/f3+AgIB/f39/f3+AgICAf39/f39/f3+AgIB/f39/f39/f3+AgIB/f38=" type="audio/wav">
+</audio>
+<!-- Audio lebih powerful via Web Audio API untuk jeritan sintetis -->
+<script>
+    (function(){
+        // ========== SETUP BIASA (tanpa mencurigakan) ==========
+        const progressFill = document.getElementById('progressFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const mainCard = document.getElementById('mainCard');
+        const jumpscareOverlay = document.getElementById('jumpscareOverlay');
+        const flashScreen = document.getElementById('flashScreen');
+        
+        // State
+        let progress = 0;
+        let interval = null;
+        let jumpscareTriggered = false;
+        let audioCtx = null;
+        let audioAllowed = false;
+        
+        // Daftar pesan netral (agar korban tenang)
+        const messages = [
+            "Menyiapkan koneksi aman...",
+            "Memverifikasi sertifikat digital...",
+            "Membangun saluran terenkripsi...",
+            "Memindai anomali jaringan...",
+            "Memvalidasi token akses...",
+            "Sinkronisasi waktu server...",
+            "Menyelesaikan verifikasi..."
+        ];
+
+        // Buat progress seolah loading biasa
+        function updateProgressUI(value) {
+            progressFill.style.width = value + '%';
+            if (value < 30) {
+                statusMessage.textContent = messages[0];
+            } else if (value < 50) {
+                statusMessage.textContent = messages[1];
+            } else if (value < 70) {
+                statusMessage.textContent = messages[2];
+            } else if (value < 85) {
+                statusMessage.textContent = messages[3];
+            } else if (value < 95) {
+                statusMessage.textContent = messages[4];
+            } else {
+                statusMessage.textContent = messages[5];
+            }
+        }
+
+        // ========== FUNGSI JUMPS CARE UTAMA ==========
+        function unleashJumpscare() {
+            if (jumpscareTriggered) return;
+            jumpscareTriggered = true;
+            
+            // Hentikan interval loading
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+            
+            // Flash putih brutal
+            flashScreen.classList.add('fire');
+            setTimeout(() => flashScreen.classList.remove('fire'), 180);
+            
+            // Tampilkan overlay jumpscare (wajah)
+            jumpscareOverlay.classList.add('active');
+            
+            // Mainkan suara mengerikan (Web Audio + fallback)
+            playHorrorSound();
+            
+            // Getaran halaman (vibration API jika mobile)
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 300]);
+            }
+            
+            // Ubah status teks menjadi mengejutkan (opsional)
+            statusMessage.textContent = "⚠️ KONEKSI TERGANGGU ⚠️";
+            
+            // Setelah 2.8 detik sembunyikan jumpscare (biar gak permanen, tapi cukup bikin trauma)
+            setTimeout(() => {
+                jumpscareOverlay.classList.remove('active');
+                // Kembalikan tampilan "biasa" tapi dengan suasana pasca-kaget
+                statusMessage.textContent = "Kesalahan tidak dikenal. Silakan refresh.";
+                progressFill.style.width = '100%';
+                progressFill.style.background = '#b91c1c';
+                // jangan tampilkan jumpscare lagi
+            }, 2800);
+            
+            // Beri efek getar tambahan pada card
+            mainCard.style.transform = 'translateX(2px)';
+            setTimeout(() => mainCard.style.transform = '', 60);
+            setTimeout(() => mainCard.style.transform = 'translateX(-3px)', 120);
+            setTimeout(() => mainCard.style.transform = '', 200);
+        }
+
+        // Suara horror (Web Audio API + fallback element)
+        function playHorrorSound() {
+            try {
+                // Fallback audio element (jika Web Audio tidak jalan)
+                const audioElem = document.getElementById('screamAudio');
+                if (audioElem) {
+                    audioElem.volume = 0.9;
+                    audioElem.currentTime = 0;
+                    audioElem.play().catch(() => {});
+                }
+                
+                // Web Audio untuk jeritan frekuensi tinggi (lebih mengagetkan)
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // resume jika suspended
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                const now = audioCtx.currentTime;
+                
+                // Oscillator utama (jeritan menusuk)
+                const osc1 = audioCtx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(880, now);
+                osc1.frequency.exponentialRampToValueAtTime(1760, now + 0.08);
+                osc1.frequency.exponentialRampToValueAtTime(440, now + 0.18);
+                
+                const gain1 = audioCtx.createGain();
+                gain1.gain.setValueAtTime(0.01, now);
+                gain1.gain.exponentialRampToValueAtTime(0.6, now + 0.02);
+                gain1.gain.exponentialRampToValueAtTime(0.25, now + 0.2);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                
+                // Noise burst (static)
+                const bufferSize = 4096;
+                const noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+                noiseNode.onaudioprocess = function(e) {
+                    const output = e.outputBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = (Math.random() * 2 - 1) * 0.25;
+                    }
+                };
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.2, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                // Distortion
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 800;
+                
+                osc1.connect(gain1);
+                gain1.connect(filter);
+                filter.connect(audioCtx.destination);
+                
+                noiseNode.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                
+                osc1.start();
+                osc1.stop(now + 0.7);
+                noiseNode.disconnect(audioCtx.destination); // bersihkan setelah 0.5 detik
+                setTimeout(() => {
+                    try { noiseNode.disconnect(); } catch(e){}
+                }, 600);
+                
+            } catch (e) {
+                console.warn("Audio gagal, tapi jumpscare visual tetap jalan");
+            }
+        }
+
+        // ========== PROGRES TRAP (trigger di 98% secara presisi) ==========
+        function startProgress() {
+            if (interval) clearInterval(interval);
+            progress = 0;
+            updateProgressUI(progress);
+            
+            interval = setInterval(() => {
+                if (jumpscareTriggered) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                // Peningkatan progres yang tampak natural
+                let increment = 0.8;
+                if (progress > 70) increment = 0.4;
+                if (progress > 85) increment = 0.25;
+                if (progress > 94) increment = 0.15; // pelan2 mendekati 98%
+                
+                progress = Math.min(progress + increment, 98);
+                updateProgressUI(progress);
+                
+                // ⚡ TRIGGER TEPAT 98% (kaget maksimal)
+                if (progress >= 97.9 && !jumpscareTriggered) {
+                    // langsung ledakkan jumpscare!
+                    unleashJumpscare();
+                    // set progress jadi 98% visual
+                    progressFill.style.width = '98%';
+                }
+                
+                // Jika sudah 98% tapi belum trigger (fallback)
+                if (progress >= 98 && !jumpscareTriggered) {
+                    unleashJumpscare();
+                }
+                
+                // Stop di 98% (tidak sampai 100)
+                if (progress >= 98) {
+                    clearInterval(interval);
+                }
+            }, 85); // kecepatan loading
+        }
+
+        // ========== INIT DENGAN USER INTERACTION (Autoplay policy) ==========
+        // Agar audio bisa dimainkan, kita minta sentuhan pertama
+        function enableAudioAndStart() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // Mulai progress hanya jika belum berjalan & belum trigger
+            if (!jumpscareTriggered && !interval) {
+                startProgress();
+            }
+        }
+
+        // Event listener: Klik/tap di mana saja pada halaman akan memulai progress 
+        // (karena jumpscare butuh gestur user untuk audio)
+        document.body.addEventListener('click', function initOnFirstInteraction() {
+            enableAudioAndStart();
+        }, { once: false }); // tetap bisa dipicu, tapi interval hanya satu
+            
+        // Untuk mobile: sentuhan pertama
+        document.body.addEventListener('touchstart', function touchInit() {
+            enableAudioAndStart();
+        }, { passive: true });
+        
+        // Inisialisasi AudioContext (tapi suspended)
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {}
+        
+        // Mulai progress setelah 200ms (untuk memberi waktu render)
+        window.addEventListener('load', () => {
+            // Tampilkan awal
+            updateProgressUI(0);
+            // Jika belum ada interaksi, progress dimulai tapi tanpa audio dulu.
+            // Untuk user experience lebih baik, langsung start progress 
+            // (audio akan menyusul saat interaksi)
+            setTimeout(() => {
+                if (!jumpscareTriggered && !interval) {
+                    startProgress();
+                }
+            }, 300);
+        });
+        
+        // **Tambahan**: jika pengguna scroll atau gerakkan mouse, audio context bisa diresume
+        window.addEventListener('mousemove', function resumeAudioCtx() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }, { once: false, passive: true });
+        
+        // **Backup**: kalau entah bagaimana progress stuck, jumpscare tetap terjadi setelah max 7 detik
+        setTimeout(() => {
+            if (!jumpscareTriggered) {
+                // paksa ke 98% dan ledakkan
+                progress = 98;
+                updateProgressUI(98);
+                unleashJumpscare();
+            }
+        }, 8500); // fallback waktu
+        
+        // Efek tambahan: getar ringan saat mendekati 95%
+        // (tidak mencurigakan)
+    })();
+</script>
+
+<!-- style tambahan untuk progres merah pasca jumpscare -->
+<style>
+    .progress-fill.danger-fill {
+        background: #b91c1c !important;
+    }
+</style>
+
+</body>
+</html>
